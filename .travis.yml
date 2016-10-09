@@ -2,10 +2,14 @@ language: cpp
 dist: trusty
 sudo: true
 
-script:
+before_install:
   - sudo add-apt-repository --yes ppa:beineri/opt-qt57-xenial
   - sudo apt-get update -qq
+  
+install:
   - sudo apt-get -y install qt57base binutils zlib1g-dev libqt5opengl5-dev
+  
+script:
   - source /opt/qt57/bin/qt57-env.sh
   - qmake -v
   - mkdir Tiled ; cd Tiled/
