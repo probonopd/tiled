@@ -14,7 +14,8 @@ script:
   - source /opt/qt57/bin/qt57-env.sh
   - qmake -v
   - mkdir Tiled ; cd Tiled/
-  - qmake ../tiled.pro || true # make[1]: /opt/qt57/bin/lrelease: Command not found
+  - qmake ../tiled.pro
+  - make || true # make[1]: /opt/qt57/bin/lrelease: Command not found
   - rm -rf src/
   - mv bin/* . && rm -r bin/ # Workaround for https://github.com/probonopd/linuxdeployqt/issues/14
   - cd ../
