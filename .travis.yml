@@ -4,11 +4,11 @@ sudo: true
 os: linux
 
 before_install:
-  - sudo add-apt-repository --yes ppa:beineri/opt-qt57-trusty
+  - sudo add-apt-repository --yes ppa:beineri/opt-qt56-trusty
   - sudo apt-get update -qq
   
 install:
-  - sudo apt-get -y install qt57base binutils zlib1g-dev libqt5opengl5-dev
+  - sudo apt-get -y install qt56base binutils zlib1g-dev libqt5opengl5-dev
   
 script:
   - source /opt/qt57/bin/qt57-env.sh
