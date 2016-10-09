@@ -25,4 +25,4 @@ script:
   - wget -c "https://github.com/probonopd/linuxdeployqt/releases/download/1/linuxdeployqt-1-x86_64.AppImage"
   - chmod a+x linuxdeployqt-1-x86_64.AppImage
   - ./linuxdeployqt-1-x86_64.AppImage ./Tiled/tiled -appimage -verbose=2
-  - curl --upload-file ./*.AppImage https://transfer.sh/Tiled.AppImage # Replace with your deployment mechanism
+  - curl --upload-file $(ls *.AppImage) https://transfer.sh/Tiled.AppImage # Replace with your deployment mechanism
