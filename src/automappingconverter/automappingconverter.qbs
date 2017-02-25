@@ -8,6 +8,7 @@ TiledQtGuiApplication {
     Depends { name: "Qt"; submodules: ["widgets"] }
 
     cpp.includePaths: ["."]
+    cpp.defines: ["QT_NO_FOREACH"]
 
     consoleApplication: false
 
@@ -23,7 +24,7 @@ TiledQtGuiApplication {
     ]
 
     Properties {
-        condition: qbs.targetOS.contains("osx")
+        condition: qbs.targetOS.contains("macos")
         targetName: "Automapping Converter"
     }
 }

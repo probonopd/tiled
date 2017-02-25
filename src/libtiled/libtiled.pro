@@ -22,10 +22,15 @@ win32 {
 DEFINES += QT_NO_CAST_FROM_ASCII \
     QT_NO_CAST_TO_ASCII
 DEFINES += TILED_LIBRARY
+
+!isEmpty(TILED_LINUX_ARCHIVE):DEFINES += TILED_LINUX_ARCHIVE
+
 contains(QT_CONFIG, reduce_exports): CONFIG += hide_symbols
 
 SOURCES += compression.cpp \
+    filesystemwatcher.cpp \
     gidmapper.cpp \
+    grouplayer.cpp \
     hexagonalrenderer.cpp \
     imagelayer.cpp \
     imagereference.cpp \
@@ -42,14 +47,19 @@ SOURCES += compression.cpp \
     plugin.cpp \
     pluginmanager.cpp \
     properties.cpp \
+    savefile.cpp \
     staggeredrenderer.cpp \
     tile.cpp \
+    tileanimationdriver.cpp \
     tilelayer.cpp \
     tileset.cpp \
     tilesetformat.cpp \
+    tilesetmanager.cpp \
     varianttomapconverter.cpp
 HEADERS += compression.h \
+    filesystemwatcher.h \
     gidmapper.h \
+    grouplayer.h \
     hexagonalrenderer.h \
     imagelayer.h \
     imagereference.h \
@@ -69,14 +79,17 @@ HEADERS += compression.h \
     plugin.h \
     pluginmanager.h \
     properties.h \
+    savefile.h \
     staggeredrenderer.h \
     terrain.h \
     tile.h \
+    tileanimationdriver.h \
     tiled.h \
     tiled_global.h \
     tilelayer.h \
     tileset.h \
     tilesetformat.h \
+    tilesetmanager.h \
     varianttomapconverter.h
 
 contains(INSTALL_HEADERS, yes) {

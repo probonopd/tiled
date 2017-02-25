@@ -19,8 +19,7 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef PREFERENCES_H
-#define PREFERENCES_H
+#pragma once
 
 #include <QColor>
 #include <QDate>
@@ -91,6 +90,9 @@ public:
 
     bool dtdEnabled() const;
     void setDtdEnabled(bool enabled);
+
+    bool safeSavingEnabled() const;
+    void setSafeSavingEnabled(bool enabled);
 
     QString language() const;
     void setLanguage(const QString &language);
@@ -178,6 +180,8 @@ signals:
 
     void useOpenGLChanged(bool useOpenGL);
 
+    void languageChanged();
+
     void objectTypesChanged();
 
     void mapsDirectoryChanged();
@@ -218,6 +222,7 @@ private:
     Map::LayerDataFormat mLayerDataFormat;
     Map::RenderOrder mMapRenderOrder;
     bool mDtdEnabled;
+    bool mSafeSavingEnabled;
     QString mLanguage;
     bool mReloadTilesetsOnChange;
     bool mUseOpenGL;
@@ -253,6 +258,11 @@ inline QColor Preferences::selectionColor() const
     return mSelectionColor;
 }
 
+inline bool Preferences::safeSavingEnabled() const
+{
+    return mSafeSavingEnabled;
+}
+
 inline Preferences::ObjectLabelVisiblity Preferences::objectLabelVisibility() const
 {
     return mObjectLabelVisibility;
@@ -285,5 +295,3 @@ inline bool Preferences::openLastFilesOnStartup() const
 
 } // namespace Internal
 } // namespace Tiled
-
-#endif // PREFERENCES_H

@@ -28,6 +28,8 @@
 #include "mapscene.h"
 #include "objectgroup.h"
 #include "raiselowerhelper.h"
+#include "resizemapobject.h"
+#include "tile.h"
 #include "utils.h"
 
 #include <QKeyEvent>
@@ -38,6 +40,20 @@
 
 using namespace Tiled;
 using namespace Tiled::Internal;
+
+
+static bool isTileObject(MapObject *mapObject)
+{
+    return !mapObject->cell().isEmpty();
+}
+
+static bool isResizedTileObject(MapObject *mapObject)
+{
+    if (const auto tile = mapObject->cell().tile())
+        return mapObject->size() != tile->size();
+    return false;
+}
+
 
 AbstractObjectTool::AbstractObjectTool(const QString &name,
                                        const QIcon &icon,
@@ -81,12 +97,14 @@ void AbstractObjectTool::mouseMoved(const QPointF &pos,
     // Take into account the offset of the current layer
     QPointF offsetPos = pos;
     if (Layer *layer = currentLayer())
-        offsetPos -= layer->offset();
+        offsetPos -= layer->totalOffset();
+
+    const QPoint pixelPos = offsetPos.toPoint();
 
     const QPointF tilePosF = mapDocument()->renderer()->screenToTileCoords(offsetPos);
     const int x = (int) std::floor(tilePosF.x());
     const int y = (int) std::floor(tilePosF.y());
-    setStatusInfo(QString(QLatin1String("%1, %2")).arg(x).arg(y));
+    setStatusInfo(QString(QLatin1String("%1, %2 (%3, %4)")).arg(x).arg(y).arg(pixelPos.x()).arg(pixelPos.y()));
 }
 
 void AbstractObjectTool::mousePressed(QGraphicsSceneMouseEvent *event)
@@ -128,6 +146,29 @@ void AbstractObjectTool::duplicateObjects()
 void AbstractObjectTool::removeObjects()
 {
     mapDocument()->removeObjects(mapDocument()->selectedObjects());
+}
+
+void AbstractObjectTool::resetTileSize()
+{
+    QList<QUndoCommand*> commands;
+
+    for (auto mapObject : mapDocument()->selectedObjects()) {
+        if (!isResizedTileObject(mapObject))
+            continue;
+
+        commands << new ResizeMapObject(mapDocument(),
+                                        mapObject,
+                                        mapObject->cell().tile()->size(),
+                                        mapObject->size());
+    }
+
+    if (!commands.isEmpty()) {
+        QUndoStack *undoStack = mapDocument()->undoStack();
+        undoStack->beginMacro(tr("Reset Tile Size"));
+        for (auto command : commands)
+            undoStack->push(command);
+        undoStack->endMacro();
+    }
 }
 
 void AbstractObjectTool::flipHorizontally()
@@ -188,6 +229,17 @@ void AbstractObjectTool::showContextMenu(MapObjectItem *clickedObjectItem,
     duplicateAction->setIcon(QIcon(QLatin1String(":/images/16x16/stock-duplicate-16.png")));
     removeAction->setIcon(QIcon(QLatin1String(":/images/16x16/edit-delete.png")));
 
+    bool anyTileObjectSelected = std::any_of(selectedObjects.begin(),
+                                             selectedObjects.end(),
+                                             isTileObject);
+
+    if (anyTileObjectSelected) {
+        auto resetTileSizeAction = menu.addAction(tr("Reset Tile Size"), this, SLOT(resetTileSize()));
+        resetTileSizeAction->setEnabled(std::any_of(selectedObjects.begin(),
+                                                    selectedObjects.end(),
+                                                    isResizedTileObject));
+    }
+
     menu.addSeparator();
     menu.addAction(tr("Flip Horizontally"), this, SLOT(flipHorizontally()), QKeySequence(tr("X")));
     menu.addAction(tr("Flip Vertically"), this, SLOT(flipVertically()), QKeySequence(tr("Y")));
@@ -226,7 +278,7 @@ void AbstractObjectTool::showContextMenu(MapObjectItem *clickedObjectItem,
     if (action == propertiesAction) {
         MapObject *mapObject = selectedObjects.first();
         mapDocument()->setCurrentObject(mapObject);
-        mapDocument()->emitEditCurrentObject();
+        emit mapDocument()->editCurrentObject();
         return;
     }
 

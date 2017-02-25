@@ -26,8 +26,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef MAPRENDERER_H
-#define MAPRENDERER_H
+#pragma once
 
 #include "tiled_global.h"
 
@@ -268,7 +267,7 @@ public:
 
 private:
     QPainter * const mPainter;
-    Tile *mTile;
+    const Tile *mTile;
     QVector<QPainter::PixmapFragment> mFragments;
     const bool mIsOpenGL;
 };
@@ -276,5 +275,3 @@ private:
 } // namespace Tiled
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(Tiled::RenderFlags)
-
-#endif // MAPRENDERER_H

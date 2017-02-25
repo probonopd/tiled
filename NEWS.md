@@ -1,3 +1,84 @@
+### 0.18.2 (21 February 2017)
+
+* Fixed crash when deleting multiple selected objects
+* Fixed crash when moving multiple selected objects to another object layer
+* Fixed updating of values displayed in Objects and Layers views
+* GmxPlugin: Added support for image collection tilesets
+* Object Types Editor: Improved behavior when adding new types
+* Linux: Fixed shipping of image format plugins in AppImage releases
+
+### 0.18.1 (23 January 2017)
+
+* Fixed terrain brush for isometric staggered maps (by Clyde)
+* Fixed crash when resizing map causes objects to get removed
+* Fixed crash when duplicating an object layer
+* Fixed position of image layer after Resize or Offset Map
+* Fixed the quality of the minimap on HiDpi displays
+* Fixed Alt-drag behavior to not override resize handles
+* When adding a new layer, insert it above the current one
+* GmxPlugin: Fixed positioning for non-tile objects and support scaling
+* GmxPlugin: Export tile objects without a type as tiles
+* GmxPlugin: Support horizontal and vertical flipping
+* Windows: Fixed encoding problems with command-line output
+* Windows: Fixed the architecture of shipped MSVC DLLs
+* Updated Chinese translation (by Clyde)
+
+### 0.18.0 (20 December 2016)
+
+* Added Layer via Copy/Cut actions
+* Added support for Paste in Place action for tile layers
+* Added context menu to change custom property type (by Dmitry Hrabrov)
+* Added support for higher precision for custom floating point properties
+* Added %mappath variable to commands (by Jack Roper)
+* Added snapping to pixels (by Mamed Ibrahimov)
+* Added right-click to clear the tile selection
+* Added a context menu action to reset the size of tile objects
+* Added exporter for Game Maker Studio room files (by Jones Blunt)
+* Added Move Up/Down buttons to Objects view (by iskolbin)
+* Added pixel coordinates to status bar for object tools (by iskolbin)
+* Added Sticker Knight platformer example (by Ponywolf)
+* tmxrasterizer: Added --size argument and support local file URLs
+* tmxrasterizer: Use smooth pixmap transform by default
+* Linux: Register tmxrasterizer as thumbnail generator for TMX files
+* Allow scrolling past map edges with mouse wheel
+* Enabled HiDpi scaling and improved the quality of some icons
+* Reversed the order of the objects in the Objects view
+* JSON plugin: Added Node.js support to the JavaScript export
+* Updated TMX schema definition (by assofohdz)
+* Fixed unfinished objects getting saved
+* Fixed OpenGL rendering mode when application is scaled (HiDpi screens)
+* Fixed Remove and Rename actions for predefined properties
+* Windows: Fixed console output
+* libtiled-java: Use Maven, deploy to OSSRH and code updates (by Mike Thomas)
+* libtiled-java: Added a basic isometric renderer (by Mike Thomas)
+* Updated Brazilian Portuguese, Chinese, Czech, Dutch, Hebrew, Norwegian Bokmål and Spanish translations
+
+### 0.17.2 (28 November 2016)
+
+* Fixed bug with editing type and name for multiple objects
+* Fixed ability to change the image of a tile in an image collection tileset
+* Fixed wrong layer name getting edited when switching maps
+* Fixed possible crash when missing tileset images and using tile animations
+* Compiled against Qt 5.6.2 on macOS to avoid crashes with Qt 5.7
+
+### 0.17.1 (4 November 2016)
+
+* Fixed wrong alpha value when opening the color picker dialog
+* Fixed saving of object group color alpha value
+* Fixed tile id adjustment for newly added tilesets
+* Fixed "Object Properties" entry in the context menu to be always enabled (by Erik Schilling)
+* Fixed out-of-sync tile selection during layer offset change (by nykm)
+* Fixed hidden objects becoming visible when offsetting the map (by ranjak)
+* Fixed problems with using predefined file properties
+* Lua plugin: Fixed type of animation frame properties
+* OS X: Use standard shortcut for toggling full screen
+* OS X: Fixed compile when pkg-config is present
+* Windows: Include the Defold plugin
+* Windows: Added support for DDS, TGA, WBMP and WEBP image formats
+* Linux: Added 64-bit AppImage (with help from Simon Peter)
+* Chinese translation updates (by endlesstravel and buckle2000)
+* French translation updated (by Yohann Ferreira)
+
 ### 0.17.0 (15 August 2016)
 
 * Added a platform-independent theme, which can be dark (#786)

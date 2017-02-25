@@ -351,7 +351,7 @@ bool AutoMapper::setupMissingLayers()
                                              mMapWork->width(),
                                              mMapWork->height());
         mMapDocument->undoStack()->push(
-                    new AddLayer(mMapDocument, index, tilelayer));
+                    new AddLayer(mMapDocument, index, tilelayer, nullptr));
         mAddedTileLayers.append(name);
     }
 
@@ -360,11 +360,9 @@ bool AutoMapper::setupMissingLayers()
             continue;
 
         const int index =  mMapWork->layerCount();
-        ObjectGroup *objectGroup = new ObjectGroup(name, 0, 0,
-                                                   mMapWork->width(),
-                                                   mMapWork->height());
+        ObjectGroup *objectGroup = new ObjectGroup(name, 0, 0);
         mMapDocument->undoStack()->push(
-                    new AddLayer(mMapDocument, index, objectGroup));
+                    new AddLayer(mMapDocument, index, objectGroup, nullptr));
         mAddedTileLayers.append(name);
     }
 
@@ -426,9 +424,10 @@ bool AutoMapper::setupTilesets(Map *src, Map *dst)
                                                      properties));
             }
         }
-        src->replaceTileset(tileset, replacement);
 
-        tilesetManager->addReference(replacement);
+        if (src->replaceTileset(tileset, replacement))
+            tilesetManager->addReference(replacement);
+
         tilesetManager->removeReference(tileset);
     }
     return true;
@@ -884,7 +883,7 @@ void AutoMapper::cleanTileLayers()
             continue;
 
         QUndoStack *undo = mMapDocument->undoStack();
-        undo->push(new RemoveLayer(mMapDocument, layerIndex));
+        undo->push(new RemoveLayer(mMapDocument, layerIndex, nullptr));
     }
     mAddedTileLayers.clear();
 }

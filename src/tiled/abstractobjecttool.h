@@ -18,8 +18,7 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef ABSTRACTOBJECTTOOL_H
-#define ABSTRACTOBJECTTOOL_H
+#pragma once
 
 #include "abstracttool.h"
 
@@ -71,6 +70,7 @@ protected:
 private slots:
     void duplicateObjects();
     void removeObjects();
+    void resetTileSize();
 
     void flipHorizontally();
     void flipVertically();
@@ -89,5 +89,3 @@ private:
 
 } // namespace Internal
 } // namespace Tiled
-
-#endif // ABSTRACTOBJECTTOOL_H

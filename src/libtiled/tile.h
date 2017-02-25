@@ -27,8 +27,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TILE_H
-#define TILE_H
+#pragma once
 
 #include "object.h"
 
@@ -105,7 +104,7 @@ public:
     const QPixmap &image() const;
     void setImage(const QPixmap &image);
 
-    const QPixmap &currentFrameImage() const;
+    const Tile *currentFrameTile() const;
 
     const QString &imageSource() const;
     void setImageSource(const QString &imageSource);
@@ -139,6 +138,8 @@ public:
     bool advanceAnimation(int ms);
 
     bool imageLoaded() const;
+
+    Tile *clone(Tileset *tileset) const;
 
 private:
     int mId;
@@ -300,5 +301,3 @@ inline bool Tile::imageLoaded() const
 }
 
 } // namespace Tiled
-
-#endif // TILE_H

@@ -29,6 +29,7 @@
  */
 package tiled.core;
 
+import java.awt.Color;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.geom.Area;
@@ -38,6 +39,8 @@ import java.util.LinkedList;
 import java.util.Iterator;
 import java.util.List;
 
+import javax.xml.bind.annotation.XmlRootElement;
+
 /**
  * A layer containing {@link MapObject map objects}.
  *
@@ -45,10 +48,12 @@ import java.util.List;
  * @author Adam Turk
  * @version 0.17
  */
+@XmlRootElement(name = "objectgroup")
 public class ObjectGroup extends MapLayer implements Iterable<MapObject> {
 
     private List<MapObject> objects = new LinkedList<>();
     private String draworder;
+    private Color color;
 
     /**
      * Default constructor.
@@ -104,6 +109,24 @@ public class ObjectGroup extends MapLayer implements Iterable<MapObject> {
      */
     public void setDraworder(String draworder) {
         this.draworder = draworder;
+    }
+
+    /**
+     * gets the color.
+     *
+     * @return color
+     */
+    public Color getColor() {
+        return color;
+    }
+
+    /**
+     * sets the color.
+     *
+     * @param color ObjectGroup color
+     */
+    public void setColor(String color) {
+        this.color = Color.decode(color);
     }
 
     /**
@@ -292,5 +315,4 @@ public class ObjectGroup extends MapLayer implements Iterable<MapObject> {
 
         return null;
     }
-
 }

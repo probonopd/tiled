@@ -4,7 +4,7 @@ DynamicLibrary {
     targetName: "tiled"
 
     Depends { name: "cpp" }
-    Depends { name: "Qt"; submodules: "gui" }
+    Depends { name: "Qt"; submodules: "gui"; versionAtLeast: "5.4" }
 
     Properties {
         condition: !(qbs.toolchain.contains("msvc") ||
@@ -26,7 +26,7 @@ DynamicLibrary {
     }
 
     Properties {
-        condition: qbs.targetOS.contains("osx")
+        condition: qbs.targetOS.contains("macos")
         cpp.cxxFlags: ["-Wno-unknown-pragmas"]
     }
 
@@ -36,8 +36,12 @@ DynamicLibrary {
     files: [
         "compression.cpp",
         "compression.h",
+        "filesystemwatcher.cpp",
+        "filesystemwatcher.h",
         "gidmapper.cpp",
         "gidmapper.h",
+        "grouplayer.cpp",
+        "grouplayer.h",
         "hexagonalrenderer.cpp",
         "hexagonalrenderer.h",
         "imagelayer.cpp",
@@ -73,9 +77,13 @@ DynamicLibrary {
         "pluginmanager.h",
         "properties.cpp",
         "properties.h",
+        "savefile.cpp",
+        "savefile.h",
         "staggeredrenderer.cpp",
         "staggeredrenderer.h",
         "tile.cpp",
+        "tileanimationdriver.cpp",
+        "tileanimationdriver.h",
         "tiled_global.h",
         "tiled.h",
         "tile.h",
@@ -85,6 +93,8 @@ DynamicLibrary {
         "tileset.h",
         "tilesetformat.cpp",
         "tilesetformat.h",
+        "tilesetmanager.cpp",
+        "tilesetmanager.h",
         "varianttomapconverter.cpp",
         "varianttomapconverter.h",
     ]

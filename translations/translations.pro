@@ -16,6 +16,7 @@ LANGUAGES = \
     en \
     es \
     fr \
+    he \
     it \
     ja \
     nb \
@@ -29,7 +30,6 @@ LANGUAGES = \
     zh_TW
 
 # Disabled languages because they're too outdated
-#    he \
 #    lv \
 
 # Helper function to adapt the slashes in a path to the system
@@ -63,7 +63,7 @@ isEmpty(LRELEASE):LRELEASE = $$fixSlashes($$[QT_INSTALL_BINS]/lrelease)
 ts.commands = cd $$PWD/.. && $$LUPDATE src -ts $$TRANSLATIONS
 QMAKE_EXTRA_TARGETS += ts
 
-win32 {
+win32|!isEmpty(TILED_LINUX_ARCHIVE) {
     TARGET_DIR = .
 } else:macx {
     TARGET_DIR = ../bin/Tiled.app/Contents/Translations

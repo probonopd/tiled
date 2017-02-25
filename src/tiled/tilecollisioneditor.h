@@ -18,8 +18,7 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef TILECOLLISIONEDITOR_H
-#define TILECOLLISIONEDITOR_H
+#pragma once
 
 #include "clipboardmanager.h"
 
@@ -34,7 +33,7 @@ class Tileset;
 namespace Internal {
 
 class AbstractTool;
-class MapDocument;
+class TilesetDocument;
 class MapScene;
 class MapView;
 class PropertiesDock;
@@ -53,9 +52,7 @@ public:
     explicit TileCollisionEditor(QWidget *parent = nullptr);
     ~TileCollisionEditor();
 
-    void setMapDocument(MapDocument *mapDocument);
-
-    void writeSettings();
+    void setTilesetDocument(TilesetDocument *tilesetDocument);
 
 signals:
     void closed();
@@ -71,7 +68,6 @@ private slots:
     void setSelectedTool(AbstractTool*);
     void applyChanges();
     void tileObjectGroupChanged(Tile*);
-    void tilesetFileNameChanged(Tileset *);
     void currentObjectChanged(Object *object);
 
     void undo();
@@ -89,7 +85,7 @@ private:
     void retranslateUi();
 
     Tile *mTile;
-    MapDocument *mMapDocument;
+    TilesetDocument *mTilesetDocument;
     MapScene *mMapScene;
     MapView *mMapView;
     ToolManager *mToolManager;
@@ -100,5 +96,3 @@ private:
 
 } // namespace Internal
 } // namespace Tiled
-
-#endif // TILECOLLISIONEDITOR_H

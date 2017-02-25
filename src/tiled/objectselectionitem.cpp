@@ -20,12 +20,13 @@
 
 #include "objectselectionitem.h"
 
-#include "objectgroup.h"
+#include "grouplayer.h"
 #include "map.h"
 #include "mapdocument.h"
 #include "mapobject.h"
 #include "mapobjectitem.h"
 #include "maprenderer.h"
+#include "objectgroup.h"
 #include "preferences.h"
 #include "tile.h"
 
@@ -71,11 +72,17 @@ static QRectF objectBounds(const MapObject *object,
 {
     if (!object->cell().isEmpty()) {
         // Tile objects can have a tile offset, which is scaled along with the image
-        const Tile *tile = object->cell().tile;
-        const QSize imgSize = tile->image().size();
-        const QPointF position = renderer->pixelToScreenCoords(object->position());
+        QSizeF imgSize;
+        QPoint tileOffset;
 
-        const QPoint tileOffset = tile->tileset()->tileOffset();
+        if (const Tile *tile = object->cell().tile()) {
+            imgSize = tile->size();
+            tileOffset = tile->offset();
+        } else {
+            imgSize = object->size();
+        }
+
+        const QPointF position = renderer->pixelToScreenCoords(object->position());
         const QSizeF objectSize = object->size();
         const qreal scaleX = imgSize.width() > 0 ? objectSize.width() / imgSize.width() : 0;
         const qreal scaleY = imgSize.height() > 0 ? objectSize.height() / imgSize.height() : 0;
@@ -105,6 +112,8 @@ static QRectF objectBounds(const MapObject *object,
             QPolygonF screenPolygon = renderer->pixelToScreenCoords(polygon);
             return screenPolygon.boundingRect();
         }
+        case MapObject::Text:
+            return renderer->boundingRect(object);
         }
     }
 
@@ -147,7 +156,7 @@ void MapObjectOutline::syncWithMapObject(MapRenderer *renderer)
 
     bounds.translate(-pixelPos);
 
-    setPos(pixelPos + mObject->objectGroup()->offset());
+    setPos(pixelPos + mObject->objectGroup()->totalOffset());
     setRotation(mObject->rotation());
 
     if (mBoundingRect != bounds) {
@@ -239,7 +248,7 @@ void MapObjectLabel::syncWithMapObject(MapRenderer *renderer)
     // Center the object name on the object bounding box
     QPointF pos((bounds.left() + bounds.right()) / 2, bounds.top());
 
-    setPos(pos + mObject->objectGroup()->offset());
+    setPos(pos + mObject->objectGroup()->totalOffset());
 
     if (mBoundingRect != boundingRect) {
         prepareGeometryChange();
@@ -336,9 +345,9 @@ void ObjectSelectionItem::mapChanged()
     syncOverlayItems(mMapDocument->selectedObjects());
 }
 
-void ObjectSelectionItem::layerAdded(int index)
+void ObjectSelectionItem::layerAdded(Layer *layer)
 {
-    ObjectGroup *objectGroup = mMapDocument->map()->layerAt(index)->asObjectGroup();
+    ObjectGroup *objectGroup = layer->asObjectGroup();
     if (!objectGroup)
         return;
 
@@ -357,9 +366,10 @@ void ObjectSelectionItem::layerAdded(int index)
     }
 }
 
-void ObjectSelectionItem::layerAboutToBeRemoved(int index)
+void ObjectSelectionItem::layerAboutToBeRemoved(GroupLayer *parentLayer, int index)
 {
-    ObjectGroup *objectGroup = mMapDocument->map()->layerAt(index)->asObjectGroup();
+    auto layer = parentLayer ? parentLayer->layerAt(index) : mMapDocument->map()->layerAt(index);
+    auto objectGroup = layer->asObjectGroup();
     if (!objectGroup)
         return;
 
@@ -368,9 +378,9 @@ void ObjectSelectionItem::layerAboutToBeRemoved(int index)
             delete mObjectLabels.take(object);
 }
 
-void ObjectSelectionItem::layerChanged(int index)
+void ObjectSelectionItem::layerChanged(Layer *layer)
 {
-    ObjectGroup *objectGroup = mMapDocument->map()->layerAt(index)->asObjectGroup();
+    ObjectGroup *objectGroup = layer->asObjectGroup();
     if (!objectGroup)
         return;
 

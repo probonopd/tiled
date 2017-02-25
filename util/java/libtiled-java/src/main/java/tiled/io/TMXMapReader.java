@@ -4,6 +4,7 @@
  * %%
  * Copyright (C) 2004 - 2016 Thorbjørn Lindeijer <thorbjorn@lindeijer.nl>
  * Copyright (C) 2004 - 2016 Adam Turk <aturk@biggeruniverse.com>
+ * Copyright (C) 2016 Mike Thomas <mikepthomas@outlook.com>
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -39,9 +40,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
@@ -52,6 +50,9 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.InflaterInputStream;
 
 import javax.imageio.ImageIO;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
@@ -81,9 +82,14 @@ import tiled.util.ImageHelper;
  *
  * @author Thorbjørn Lindeijer
  * @author Adam Turk
+ * @author Mike Thomas
  * @version 0.17
  */
 public class TMXMapReader {
+
+    public long FLIPPED_HORIZONTALLY_FLAG = 0xFFFFFFFF80000000L;
+    public long FLIPPED_VERTICALLY_FLAG = 0xFFFFFFFF40000000L;
+    public long FLIPPED_DIAGONALLY_FLAG = 0xFFFFFFFF20000000L;
 
     private Map map;
     private String xmlPath;
@@ -94,7 +100,6 @@ public class TMXMapReader {
     private final HashMap<String, TileSet> cachedTilesets = new HashMap<>();
 
     public static final class TMXMapReaderSettings {
-
         public boolean reuseCachedTilesets = false;
     }
 
@@ -118,54 +123,27 @@ public class TMXMapReader {
         return url;
     }
 
-    private static int reflectFindMethodByName(Class c, String methodName) {
-        Method[] methods = c.getMethods();
-        for (int i = 0; i < methods.length; i++) {
-            if (methods[i].getName().equalsIgnoreCase(methodName)) {
-                return i;
-            }
+    private void setOrientation(String orientation) {
+        try {
+            map.setOrientation(Map.Orientation.valueOf(orientation));
+        } catch (IllegalArgumentException e) {
+            System.out.println("Unknown orientation '" + orientation + "'");
         }
-        return -1;
     }
 
-    private void reflectInvokeMethod(Object invokeVictim, Method method,
-            String[] args) throws Exception {
-        Class[] parameterTypes = method.getParameterTypes();
-        Object[] conformingArguments = new Object[parameterTypes.length];
-
-        if (args.length < parameterTypes.length) {
-            throw new Exception("Insufficient arguments were supplied");
+    private void setStaggerAxis(String staggerAxis) {
+        try {
+            map.setStaggerAxis(Map.StaggerAxis.valueOf(staggerAxis));
+        } catch (IllegalArgumentException e) {
+            System.out.println("Unknown stagger axis '" + staggerAxis + "'");
         }
-
-        for (int i = 0; i < parameterTypes.length; i++) {
-            if ("int".equalsIgnoreCase(parameterTypes[i].getName())) {
-                conformingArguments[i] = new Integer(args[i]);
-            } else if ("float".equalsIgnoreCase(parameterTypes[i].getName())) {
-                conformingArguments[i] = new Float(args[i]);
-            } else if (parameterTypes[i].getName().endsWith("String")) {
-                conformingArguments[i] = args[i];
-            } else if ("boolean".equalsIgnoreCase(parameterTypes[i].getName())) {
-                conformingArguments[i] = Boolean.valueOf(args[i]);
-            } else {
-                // Unsupported argument type, defaulting to String
-                conformingArguments[i] = args[i];
-            }
-        }
-
-        method.invoke(invokeVictim, conformingArguments);
     }
 
-    private void setOrientation(String o) {
-        if ("isometric".equalsIgnoreCase(o)) {
-            map.setOrientation(Map.ORIENTATION_ISOMETRIC);
-        } else if ("orthogonal".equalsIgnoreCase(o)) {
-            map.setOrientation(Map.ORIENTATION_ORTHOGONAL);
-        } else if ("hexagonal".equalsIgnoreCase(o)) {
-            map.setOrientation(Map.ORIENTATION_HEXAGONAL);
-        } else if ("shifted".equalsIgnoreCase(o)) {
-            map.setOrientation(Map.ORIENTATION_SHIFTED);
-        } else {
-            System.out.println("Unknown orientation '" + o + "'");
+    private void setStaggerIndex(String staggerIndex) {
+        try {
+            map.setStaggerIndex(Map.StaggerIndex.valueOf(staggerIndex));
+        } catch (IllegalArgumentException e) {
+            System.out.println("Unknown stagger index '" + staggerIndex + "'");
         }
     }
 
@@ -199,48 +177,11 @@ public class TMXMapReader {
         }
     }
 
-    private Object unmarshalClass(Class reflector, Node node)
-            throws InstantiationException, IllegalAccessException,
-            InvocationTargetException {
-        Constructor cons = null;
-        try {
-            cons = reflector.getConstructor((Class[]) null);
-        } catch (SecurityException e1) {
-            // todo: replace with log message
-            e1.printStackTrace();
-        } catch (NoSuchMethodException e1) {
-            // todo: replace with log message
-            e1.printStackTrace();
-            return null;
-        }
-        Object o = cons.newInstance((Object[]) null);
-        Node n;
+    private <T> T unmarshalClass(Class<T> clazz, Node node) throws JAXBException {
+        JAXBContext context = JAXBContext.newInstance(clazz);
+        Unmarshaller unmarshaller = context.createUnmarshaller();
 
-        Method[] methods = reflector.getMethods();
-        NamedNodeMap nnm = node.getAttributes();
-
-        if (nnm != null) {
-            for (int i = 0; i < nnm.getLength(); i++) {
-                n = nnm.item(i);
-
-                try {
-                    int j = reflectFindMethodByName(reflector,
-                            "set" + n.getNodeName());
-                    if (j >= 0) {
-                        reflectInvokeMethod(o, methods[j],
-                                new String[]{n.getNodeValue()});
-                    } else {
-                        System.out.println("Unsupported attribute '"
-                                + n.getNodeName() + "' on <"
-                                + node.getNodeName() + "> tag");
-                    }
-                } catch (Exception e) { // todo: fix pokémon exception handling
-                    // todo: replace with log message
-                    e.printStackTrace();
-                }
-            }
-        }
-        return o;
+        return (T) unmarshaller.unmarshal(node);
     }
 
     private Image unmarshalImage(Node t, String baseDir) throws IOException {
@@ -454,7 +395,20 @@ public class TMXMapReader {
             obj.setType(type);
         }
         if (gid != null) {
-            Tile tile = getTileForTileGID(Integer.parseInt(gid));
+            long tileId = Long.parseLong(gid);
+            if (tileId > Integer.MAX_VALUE) {
+                // Read out the flags
+                // TODO: Save these flags somewhere
+                long flippedHorizontally = tileId & FLIPPED_HORIZONTALLY_FLAG;
+                long flippedVertically = tileId & FLIPPED_VERTICALLY_FLAG;
+                long flippedDiagonally = tileId & FLIPPED_DIAGONALLY_FLAG;
+
+                // Clear the flags
+                tileId &= ~(FLIPPED_HORIZONTALLY_FLAG |
+                            FLIPPED_VERTICALLY_FLAG |
+                            FLIPPED_DIAGONALLY_FLAG);
+            }
+            Tile tile = getTileForTileGID((int) tileId);
             obj.setTile(tile);
         }
 
@@ -552,11 +506,11 @@ public class TMXMapReader {
 
         try {
             if (isAnimated) {
-                tile = (Tile) unmarshalClass(AnimatedTile.class, t);
+                tile = unmarshalClass(AnimatedTile.class, t);
             } else {
-                tile = (Tile) unmarshalClass(Tile.class, t);
+                tile = unmarshalClass(Tile.class, t);
             }
-        } catch (Exception e) { // todo: fix pokémon exception handling
+        } catch (JAXBException e) {
             error = "Failed creating tile: " + e.getLocalizedMessage();
             return tile;
         }
@@ -581,8 +535,8 @@ public class TMXMapReader {
     private MapLayer unmarshalObjectGroup(Node t) throws Exception {
         ObjectGroup og = null;
         try {
-            og = (ObjectGroup) unmarshalClass(ObjectGroup.class, t);
-        } catch (Exception e) {// todo: fix pokémon exception handling
+            og = unmarshalClass(ObjectGroup.class, t);
+        } catch (JAXBException e) {
             // todo: replace with log message
             e.printStackTrace();
             return og;
@@ -813,6 +767,15 @@ public class TMXMapReader {
         String orientation = getAttributeValue(mapNode, "orientation");
         int tileWidth = getAttribute(mapNode, "tilewidth", 0);
         int tileHeight = getAttribute(mapNode, "tileheight", 0);
+        int hexsidelength = getAttribute(mapNode, "hexsidelength", 0);
+        String staggerAxis = getAttributeValue(mapNode, "staggeraxis");
+        String staggerIndex = getAttributeValue(mapNode, "staggerindex");
+
+        if (orientation != null) {
+            setOrientation(orientation.toUpperCase());
+        } else {
+            map.setOrientation(Map.Orientation.ORTHOGONAL);
+        }
 
         if (tileWidth > 0) {
             map.setTileWidth(tileWidth);
@@ -820,11 +783,16 @@ public class TMXMapReader {
         if (tileHeight > 0) {
             map.setTileHeight(tileHeight);
         }
+        if (hexsidelength > 0) {
+            map.setHexSideLength(hexsidelength);
+        }
 
-        if (orientation != null) {
-            setOrientation(orientation);
-        } else {
-            setOrientation("orthogonal");
+        if (staggerAxis != null) {
+            setStaggerAxis(staggerAxis.toUpperCase());
+        }
+
+        if (staggerIndex != null) {
+            setStaggerIndex(staggerIndex.toUpperCase());
         }
 
         // Load properties

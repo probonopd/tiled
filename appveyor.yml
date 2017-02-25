@@ -1,6 +1,5 @@
 clone_depth: 200
-version: '0.17.{build}'
-os: Previous Visual Studio 2013
+version: '0.18.{build}'
 
 environment:
   global:
@@ -12,7 +11,8 @@ environment:
 configuration: Release
 
 install:
-  - set PATH=%PATH%;%QTDIR%\bin;%MINGW%\bin;C:\Qt\Tools\QtCreator\bin
+  - choco install -y qbs
+  - set PATH=%PATH%;%QTDIR%\bin;%MINGW%\bin
 
 build_script:
   - FOR /F "tokens=*" %%i in ('git describe') do SET COMMITNOW=%%i
@@ -26,16 +26,12 @@ build_script:
   - if not defined APPVEYOR_REPO_TAG_NAME echo Building Tiled daily %TILED_VERSION%... (from %COMMITNOW%)
   - qbs --version
   - qbs setup-toolchains --detect
-  - qbs config profiles.i686-w64-mingw32.cpp.archiverPath ar.exe
-  - qbs config profiles.i686-w64-mingw32.cpp.nmPath nm.exe
-  - qbs config profiles.i686-w64-mingw32.cpp.objcopyPath objcopy.exe
-  - qbs config profiles.i686-w64-mingw32.cpp.stripPath strip.exe
   - qbs setup-qt %QTDIR%\bin\qmake.exe qt
   - qbs config defaultProfile qt
   - qbs install --all-products --install-root install-root release
 
 after_build:
-  - cd qt-release
+  - cd release
   - cd installer*
   - move tiled-*.msi %APPVEYOR_BUILD_FOLDER%
   - if defined TILED_SNAPSHOT move appcast-win*-snapshots.xml %APPVEYOR_BUILD_FOLDER%

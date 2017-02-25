@@ -18,11 +18,7 @@ Product {
     Group {
         name: "Examples"
         prefix: "../examples/"
-        files: [
-            "*.tmx",
-            "*.tsx",
-            "*.png",
-        ]
+        files: ["*.*"]
 
         qbs.install: true
         qbs.installDir: "examples"
@@ -31,13 +27,17 @@ Product {
     Group {
         name: "Examples (automapping)"
         prefix: "../examples/sewer_automap/"
-        files: [
-            "*.txt",
-            "*.png",
-            "*.tmx",
-        ]
+        files: ["*.*"]
         qbs.install: true
         qbs.installDir: "examples/sewer_automap"
+    }
+
+    Group {
+        name: "Examples (Sticker Knight)"
+        prefix: "../examples/sticker-knight/"
+        files: ["*.*"]
+        qbs.install: true
+        qbs.installDir: "examples/sticker-knight"
     }
 
     Group {
@@ -50,11 +50,10 @@ Product {
             }
         }
         property string postfix: {
-            if (qbs.targetOS.contains("windows")) {
-                return qbs.debugInformation ? "d.dll" : ".dll"
-            } else {
-                return ".so"
-            }
+            var suffix = "";
+            if (qbs.targetOS.contains("windows") && qbs.debugInformation)
+                suffix += "d";
+            return suffix + cpp.dynamicLibrarySuffix;
         }
         files: {
             function addQtVersions(libs) {
@@ -68,17 +67,28 @@ Product {
                 return result;
             }
 
-            var list = [
-                "Qt5Core" + postfix,
-                "Qt5Gui" + postfix,
-                "Qt5Network" + postfix,
-                "Qt5OpenGL" + postfix,
-                "Qt5Svg" + postfix,
-                "Qt5Widgets" + postfix,
-            ];
+            var list = [];
+
+            if (!Qt.core.frameworkBuild) {
+                list.push(
+                    "Qt5Core" + postfix,
+                    "Qt5Gui" + postfix,
+                    "Qt5Network" + postfix,
+                    "Qt5Svg" + postfix,
+                    "Qt5Widgets" + postfix
+                );
+            }
+
+            if (Qt.core.versionMinor < 4) {
+                list.push("Qt5OpenGL" + postfix);
+            }
 
             if (qbs.targetOS.contains("windows")) {
-                if (Qt.core.versionMinor < 7) {
+                if (Qt.core.versionMinor <= 4) {
+                    list.push("icuin53.dll",
+                              "icuuc53.dll",
+                              "icudt53.dll");
+                } else if (Qt.core.versionMinor < 7) {
                     list.push("icuin54.dll",
                               "icuuc54.dll",
                               "icudt54.dll");
@@ -228,9 +238,9 @@ Product {
             if (qbs.toolchain.contains("mingw"))
                 return FileInfo.joinPaths(cpp.toolchainInstallPath) + "/"
             else if (qbs.architecture === "x86_64")
-                return "C:/windows/SysWOW64/"
-            else
                 return "C:/windows/system32/"
+            else
+                return "C:/windows/SysWOW64/"
         }
         files: {
             if (qbs.toolchain.contains("mingw")) {

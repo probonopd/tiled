@@ -25,6 +25,7 @@
 #include "languagemanager.h"
 #include "mapdocument.h"
 #include "pluginmanager.h"
+#include "savefile.h"
 #include "tilesetmanager.h"
 
 #include <QDebug>
@@ -60,10 +61,13 @@ Preferences::Preferences()
     mMapRenderOrder = static_cast<Map::RenderOrder>
             (intValue("MapRenderOrder", Map::RightDown));
     mDtdEnabled = boolValue("DtdEnabled");
+    mSafeSavingEnabled = boolValue("SafeSavingEnabled", true);
     mReloadTilesetsOnChange = boolValue("ReloadTilesets", true);
     mStampsDirectory = stringValue("StampsDirectory");
     mObjectTypesFile = stringValue("ObjectTypesFile");
     mSettings->endGroup();
+
+    SaveFile::setSafeSavingEnabled(mSafeSavingEnabled);
 
     // Retrieve interface settings
     mSettings->beginGroup(QLatin1String("Interface"));
@@ -357,6 +361,13 @@ void Preferences::setDtdEnabled(bool enabled)
     mSettings->setValue(QLatin1String("Storage/DtdEnabled"), enabled);
 }
 
+void Preferences::setSafeSavingEnabled(bool enabled)
+{
+    mSafeSavingEnabled = enabled;
+    mSettings->setValue(QLatin1String("Storage/SafeSavingEnabled"), enabled);
+    SaveFile::setSafeSavingEnabled(enabled);
+}
+
 QString Preferences::language() const
 {
     return mLanguage;
@@ -372,6 +383,7 @@ void Preferences::setLanguage(const QString &language)
                         mLanguage);
 
     LanguageManager::instance()->installTranslators();
+    emit languageChanged();
 }
 
 bool Preferences::reloadTilesetsOnChange() const
@@ -448,9 +460,9 @@ QString Preferences::lastPath(FileType fileType) const
 
     if (path.isEmpty()) {
         DocumentManager *documentManager = DocumentManager::instance();
-        MapDocument *mapDocument = documentManager->currentDocument();
-        if (mapDocument)
-            path = QFileInfo(mapDocument->fileName()).path();
+        Document *document = documentManager->currentDocument();
+        if (document)
+            path = QFileInfo(document->fileName()).path();
     }
 
     if (path.isEmpty()) {
@@ -466,6 +478,9 @@ QString Preferences::lastPath(FileType fileType) const
  */
 void Preferences::setLastPath(FileType fileType, const QString &path)
 {
+    if (path.isEmpty())
+        return;
+
     mSettings->setValue(lastPathKey(fileType), path);
 }
 
@@ -583,11 +598,7 @@ qreal Preferences::realValue(const char *key, qreal defaultValue) const
 
 static QString dataLocation()
 {
-#if QT_VERSION >= 0x050400
     return QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-#else
-    return QStandardPaths::writableLocation(QStandardPaths::DataLocation);
-#endif
 }
 
 QString Preferences::stampsDirectory() const

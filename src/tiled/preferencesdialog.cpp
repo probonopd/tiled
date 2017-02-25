@@ -28,13 +28,8 @@
 
 #include <QSortFilterProxyModel>
 
-#ifndef QT_NO_OPENGL
-#include <QGLFormat>
-#endif
-
 using namespace Tiled;
 using namespace Tiled::Internal;
-
 
 PreferencesDialog::PreferencesDialog(QWidget *parent)
     : QDialog(parent)
@@ -44,10 +39,10 @@ PreferencesDialog::PreferencesDialog(QWidget *parent)
     mUi->setupUi(this);
     setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
-#ifndef QT_NO_OPENGL
-    mUi->openGL->setEnabled(QGLFormat::hasOpenGL());
-#else
+#if defined(QT_NO_OPENGL)
     mUi->openGL->setEnabled(false);
+#else
+    mUi->openGL->setEnabled(true);
 #endif
 
     foreach (const QString &name, mLanguages) {
@@ -85,6 +80,8 @@ PreferencesDialog::PreferencesDialog(QWidget *parent)
             preferences, &Preferences::setReloadTilesetsOnChanged);
     connect(mUi->openLastFiles, &QCheckBox::toggled,
             preferences, &Preferences::setOpenLastFilesOnStartup);
+    connect(mUi->safeSaving, &QCheckBox::toggled,
+            preferences, &Preferences::setSafeSavingEnabled);
 
     connect(mUi->languageCombo, SIGNAL(currentIndexChanged(int)),
             SLOT(languageSelected(int)));
@@ -146,6 +143,7 @@ void PreferencesDialog::fromPreferences()
     mUi->reloadTilesetImages->setChecked(prefs->reloadTilesetsOnChange());
     mUi->enableDtd->setChecked(prefs->dtdEnabled());
     mUi->openLastFiles->setChecked(prefs->openLastFilesOnStartup());
+    mUi->safeSaving->setChecked(prefs->safeSavingEnabled());
     if (mUi->openGL->isEnabled())
         mUi->openGL->setChecked(prefs->useOpenGL());
 

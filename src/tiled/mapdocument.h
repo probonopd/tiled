@@ -1,6 +1,6 @@
 /*
  * mapdocument.h
- * Copyright 2008-2014, Thorbjørn Lindeijer <thorbjorn@lindeijer.nl>
+ * Copyright 2008-2017, Thorbjørn Lindeijer <thorbjorn@lindeijer.nl>
  * Copyright 2009, Jeff Bland <jeff@teamphobic.com>
  * Copyright 2011, Stefan Beller <stefanbeller@googlemail.com
  *
@@ -20,19 +20,16 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef MAPDOCUMENT_H
-#define MAPDOCUMENT_H
+#pragma once
 
+#include "document.h"
 #include "layer.h"
 #include "tiled.h"
 #include "tileset.h"
 
-#include <QDateTime>
 #include <QList>
-#include <QObject>
 #include <QPointer>
 #include <QRegion>
-#include <QString>
 
 class QModelIndex;
 class QPoint;
@@ -61,11 +58,11 @@ class TileSelectionModel;
  * any editing operations will cause the appropriate signals to be emitted, in
  * order to allow the GUI to update accordingly.
  *
- * At the moment the map document provides the layer model, keeps track of the
- * the currently selected layer and provides an API for adding and removing
- * map objects. It also owns the QUndoStack.
+ * The map document provides the layer model, keeps track of the currently
+ * selected layer and provides an API for adding and removing map objects. It
+ * also owns the QUndoStack.
  */
-class MapDocument : public QObject
+class MapDocument : public Document
 {
     Q_OBJECT
 
@@ -76,39 +73,17 @@ public:
      */
     MapDocument(Map *map, const QString &fileName = QString());
 
-    /**
-     * Destructor.
-     */
     ~MapDocument();
 
-    /**
-     * Saves the map to its current file name. Returns whether or not the file
-     * was saved successfully. If not, <i>error</i> will be set to the error
-     * message if it is not 0.
-     */
-    bool save(QString *error = nullptr);
-
-    /**
-     * Saves the map to the file at \a fileName. Returns whether or not the
-     * file was saved successfully. If not, <i>error</i> will be set to the
-     * error message if it is not 0.
-     *
-     * If the save was successful, the file name of this document will be set
-     * to \a fileName.
-     *
-     * The map format will be the same as this map was opened with.
-     */
-    bool save(const QString &fileName, QString *error = nullptr);
+    bool save(const QString &fileName, QString *error = nullptr) override;
 
     /**
      * Loads a map and returns a MapDocument instance on success. Returns null
      * on error and sets the \a error message.
      */
     static MapDocument *load(const QString &fileName,
-                             MapFormat *mapFormat = nullptr,
+                             MapFormat *format,
                              QString *error = nullptr);
-
-    QString fileName() const { return mFileName; }
 
     QString lastExportFileName() const;
     void setLastExportFileName(const QString &fileName);
@@ -116,17 +91,13 @@ public:
     MapFormat *readerFormat() const;
     void setReaderFormat(MapFormat *format);
 
-    MapFormat *writerFormat() const;
+    FileFormat *writerFormat() const override;
     void setWriterFormat(MapFormat *format);
 
     MapFormat *exportFormat() const;
     void setExportFormat(MapFormat *format);
 
-    QString displayName() const;
-
-    bool isModified() const;
-
-    QDateTime lastSaved() const { return mLastSaved; }
+    QString displayName() const override;
 
     /**
      * Returns the map instance. Be aware that directly modifying the map will
@@ -134,22 +105,14 @@ public:
      */
     Map *map() const { return mMap; }
 
-    /**
-     * Sets the current layer to the given index.
-     */
-    void setCurrentLayerIndex(int index);
-
-    /**
-     * Returns the index of the currently selected layer. Returns -1 if no
-     * layer is currently selected.
-     */
-    int currentLayerIndex() const { return mCurrentLayerIndex; }
+    int layerIndex(const Layer *layer) const;
 
     /**
      * Returns the currently selected layer, or 0 if no layer is currently
      * selected.
      */
-    Layer *currentLayer() const;
+    Layer *currentLayer() const { return mCurrentLayer; }
+    void setCurrentLayer(Layer *layer);
 
     /**
      * Resize this map to the given \a size, while at the same time shifting
@@ -159,10 +122,10 @@ public:
     void resizeMap(const QSize &size, const QPoint &offset, bool removeObjects);
 
     /**
-     * Offsets the layers at \a layerIndexes by \a offset, within \a bounds,
-     * and optionally wraps on the X or Y axis.
+     * Offsets the \a layers by \a offset, within \a bounds, and optionally
+     * wraps on the X or Y axis.
      */
-    void offsetMap(const QList<int> &layerIndexes,
+    void offsetMap(const QList<Layer *> &layers,
                    const QPoint &offset,
                    const QRect &bounds,
                    bool wrapX, bool wrapY);
@@ -171,29 +134,25 @@ public:
     void rotateSelectedObjects(RotateDirection direction);
 
     Layer *addLayer(Layer::TypeFlag layerType);
+    void groupLayer(Layer *layer);
+    void ungroupLayer(Layer *layer);
     void duplicateLayer();
     void mergeLayerDown();
-    void moveLayerUp(int index);
-    void moveLayerDown(int index);
-    void removeLayer(int index);
-    void toggleOtherLayers(int index);
+    void moveLayerUp(Layer *layer);
+    void moveLayerDown(Layer *layer);
+    void removeLayer(Layer *layer);
+    void toggleOtherLayers(Layer *layer);
 
     void insertTileset(int index, const SharedTileset &tileset);
     void removeTilesetAt(int index);
-    void moveTileset(int from, int to);
     SharedTileset replaceTileset(int index, const SharedTileset &tileset);
-    void setTilesetFileName(Tileset *tileset, const QString &fileName);
-    void setTilesetName(Tileset *tileset, const QString &name);
-    void setTilesetTileOffset(Tileset *tileset, const QPoint &tileOffset);
 
     void duplicateObjects(const QList<MapObject*> &objects);
     void removeObjects(const QList<MapObject*> &objects);
     void moveObjectsToGroup(const QList<MapObject*> &objects,
                             ObjectGroup *objectGroup);
-
-    void setProperty(Object *object, const QString &name, const QVariant &value);
-    void setProperties(Object *object, const Properties &properties);
-    void removeProperty(Object *object, const QString &name);
+    void moveObjectsUp(const QList<MapObject*> &objects);
+    void moveObjectsDown(const QList<MapObject*> &objects);
 
     /**
      * Returns the layer model. Can be used to modify the layer stack of the
@@ -217,12 +176,6 @@ public:
     void createRenderer();
 
     /**
-     * Returns the undo stack of this map document. Should be used to push any
-     * commands on that modify the map.
-     */
-    QUndoStack *undoStack() const { return mUndoStack; }
-
-    /**
      * Returns the selected area of tiles.
      */
     const QRegion &selectedArea() const { return mSelectedArea; }
@@ -244,18 +197,7 @@ public:
      */
     void setSelectedObjects(const QList<MapObject*> &selectedObjects);
 
-    /**
-     * Returns the list of selected tiles.
-     */
-    const QList<Tile*> &selectedTiles() const
-    { return mSelectedTiles; }
-
-    void setSelectedTiles(const QList<Tile*> &selectedTiles);
-
-    Object *currentObject() const { return mCurrentObject; }
-    void setCurrentObject(Object *object);
-
-    QList<Object*> currentObjects() const;
+    QList<Object*> currentObjects() const override;
 
     void unifyTilesets(Map *map);
     void unifyTilesets(Map *map, QVector<SharedTileset> &missingTilesets);
@@ -266,26 +208,13 @@ public:
     void emitRegionEdited(const QRegion &region, Layer *layer);
 
     void emitTileLayerDrawMarginsChanged(TileLayer *layer);
-    void emitTilesetChanged(Tileset *tileset);
-
-    void emitTileProbabilityChanged(Tile *tile);
-    void emitTileTerrainChanged(const QList<Tile*> &tiles);
-    void emitTileObjectGroupChanged(Tile *tile);
-    void emitTileAnimationChanged(Tile *tile);
 
     void emitObjectGroupChanged(ObjectGroup *objectGroup);
     void emitImageLayerChanged(ImageLayer *imageLayer);
 
     void emitEditLayerNameRequested();
-    void emitEditCurrentObject();
 
 signals:
-    void fileNameChanged(const QString &fileName,
-                         const QString &oldFileName);
-    void modifiedChanged();
-
-    void saved();
-
     /**
      * Emitted when the selected tile region changes. Sends the currently
      * selected region and the previously selected region.
@@ -299,22 +228,14 @@ signals:
     void selectedObjectsChanged();
 
     /**
-     * Emitted when the list of selected tiles from the dock changes.
-     */
-    void selectedTilesChanged();
-
-    void currentObjectChanged(Object *object);
-
-    /**
      * Emitted when the map size or its tile size changes.
      */
     void mapChanged();
 
-    void layerAdded(int index);
-    void layerAboutToBeRemoved(int index);
-    void layerRenamed(int index);
-    void layerRemoved(int index);
-    void layerChanged(int index);
+    void layerAdded(Layer *layer);
+    void layerAboutToBeRemoved(GroupLayer *parentLayer, int index);
+    void layerRemoved(Layer *layer);
+    void layerChanged(Layer *layer);
 
     /**
      * Emitted after a new layer was added and the name should be edited.
@@ -322,12 +243,10 @@ signals:
      */
     void editLayerNameRequested();
 
-    void editCurrentObject();
-
     /**
-     * Emitted when the current layer index changes.
+     * Emitted when the current layer changes.
      */
-    void currentLayerIndexChanged(int index);
+    void currentLayerChanged(Layer *layer);
 
     /**
      * Emitted when a certain region of the map changes. The region is given in
@@ -344,12 +263,6 @@ signals:
 
     void tileLayerDrawMarginsChanged(TileLayer *layer);
 
-    void tileImageSourceChanged(Tile *tile);
-    void tileTerrainChanged(const QList<Tile*> &tiles);
-    void tileProbabilityChanged(Tile *tile);
-    void tileObjectGroupChanged(Tile *tile);
-    void tileAnimationChanged(Tile *tile);
-
     void objectGroupChanged(ObjectGroup *objectGroup);
 
     void imageLayerChanged(ImageLayer *imageLayer);
@@ -358,12 +271,7 @@ signals:
     void tilesetAdded(int index, Tileset *tileset);
     void tilesetAboutToBeRemoved(int index);
     void tilesetRemoved(Tileset *tileset);
-    void tilesetMoved(int from, int to);
-    void tilesetReplaced(int index, Tileset *tileset);
-    void tilesetFileNameChanged(Tileset *tileset);
-    void tilesetNameChanged(Tileset *tileset);
-    void tilesetTileOffsetChanged(Tileset *tileset);
-    void tilesetChanged(Tileset *tileset);
+    void tilesetReplaced(int index, Tileset *tileset, Tileset *oldTileset);
 
     void objectsAdded(const QList<MapObject*> &objects);
     void objectsInserted(ObjectGroup *objectGroup, int first, int last);
@@ -372,10 +280,12 @@ signals:
     void objectsTypeChanged(const QList<MapObject*> &objects);
     void objectsIndexChanged(ObjectGroup *objectGroup, int first, int last);
 
-    void propertyAdded(Object *object, const QString &name);
-    void propertyRemoved(Object *object, const QString &name);
-    void propertyChanged(Object *object, const QString &name);
-    void propertiesChanged(Object *object);
+    // emitted from the TilesetDocument
+    void tilesetNameChanged(Tileset *tileset);
+    void tilesetTerrainAboutToBeAdded(Tileset *tileset, int terrainId);
+    void tilesetTerrainAdded(Tileset *tileset, int terrainId);
+    void tilesetTerrainAboutToBeRemoved(Tileset *tileset, Terrain *terrain);
+    void tilesetTerrainRemoved(Tileset *tileset, Terrain *terrain);
 
 private slots:
     void onObjectsRemoved(const QList<MapObject*> &objects);
@@ -385,17 +295,14 @@ private slots:
     void onObjectsMoved(const QModelIndex &parent, int start, int end,
                         const QModelIndex &destination, int row);
 
-    void onLayerAdded(int index);
-    void onLayerAboutToBeRemoved(int index);
-    void onLayerRemoved(int index);
-
-    void onTerrainRemoved(Terrain *terrain);
+    void onLayerAdded(Layer *layer);
+    void onLayerAboutToBeRemoved(GroupLayer *groupLayer, int index);
+    void onLayerRemoved(Layer *layer);
 
 private:
-    void setFileName(const QString &fileName);
     void deselectObjects(const QList<MapObject*> &objects);
+    void moveObjectIndex(const MapObject *object, int count);
 
-    QString mFileName;
     QString mLastExportFileName;
 
     /*
@@ -409,42 +316,10 @@ private:
     LayerModel *mLayerModel;
     QRegion mSelectedArea;
     QList<MapObject*> mSelectedObjects;
-    QList<Tile*> mSelectedTiles;
-    Object *mCurrentObject;             /**< Current properties object. */
     MapRenderer *mRenderer;
-    int mCurrentLayerIndex;
+    Layer* mCurrentLayer;
     MapObjectModel *mMapObjectModel;
     TerrainModel *mTerrainModel;
-    QUndoStack *mUndoStack;
-    QDateTime mLastSaved;
-};
-
-
-/**
- * Class used to describe an embedded Tileset, changes to which are applied
- * using undo commands on the undo stack of the associated MapDocument.
- */
-class EmbeddedTileset
-{
-public:
-    EmbeddedTileset()
-        : mMapDocument(nullptr)
-        , mTileset(nullptr)
-    {}
-
-    EmbeddedTileset(MapDocument *mapDocument, Tileset *tileset)
-        : mMapDocument(mapDocument)
-        , mTileset(tileset)
-        , mImageSource(tileset->imageSource())
-    {}
-
-    MapDocument *mapDocument() const { return mMapDocument; }
-    Tileset *tileset() const { return mTileset; }
-
-private:
-    MapDocument *mMapDocument;
-    Tileset *mTileset;
-    QString mImageSource;    // affects display
 };
 
 
@@ -492,41 +367,6 @@ inline void MapDocument::emitTileLayerDrawMarginsChanged(TileLayer *layer)
 }
 
 /**
- * Emits the signal notifying about the terrain probability of a tile changing.
- */
-inline void MapDocument::emitTileProbabilityChanged(Tile *tile)
-{
-    emit tileProbabilityChanged(tile);
-}
-
-/**
- * Emits the signal notifying tileset models about changes to tile terrain
- * information. All the \a tiles need to be from the same tileset.
- */
-inline void MapDocument::emitTileTerrainChanged(const QList<Tile *> &tiles)
-{
-    if (!tiles.isEmpty())
-        emit tileTerrainChanged(tiles);
-}
-
-/**
- * Emits the signal notifying the TileCollisionEditor about the object group
- * of a tile changing.
- */
-inline void MapDocument::emitTileObjectGroupChanged(Tile *tile)
-{
-    emit tileObjectGroupChanged(tile);
-}
-
-/**
- * Emits the signal notifying about the animation of a tile changing.
- */
-inline void MapDocument::emitTileAnimationChanged(Tile *tile)
-{
-    emit tileAnimationChanged(tile);
-}
-
-/**
  * Emits the objectGroupChanged signal, should be called when changing the
  * color or drawing order of an object group.
  */
@@ -552,18 +392,5 @@ inline void MapDocument::emitEditLayerNameRequested()
     emit editLayerNameRequested();
 }
 
-/**
- * Emits the editCurrentObject signal, which makes the Properties window become
- * visible and take focus.
- */
-inline void MapDocument::emitEditCurrentObject()
-{
-    emit editCurrentObject();
-}
-
 } // namespace Internal
 } // namespace Tiled
-
-Q_DECLARE_METATYPE(Tiled::Internal::EmbeddedTileset)
-
-#endif // MAPDOCUMENT_H
